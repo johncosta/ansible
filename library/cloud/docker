@@ -52,6 +52,12 @@ options:
     required: false
     default: null
     aliases: []
+  port_bindings:
+    description:
+      - Bindings declared for use in the `Client.start` method.
+    required: false
+    default: null
+    aliases: []
   volumes:
     description:
       - Set volume(s) to mount on the container
@@ -256,6 +262,11 @@ class DockerManager:
         if self.module.params.get('ports'):
             self.ports = self.module.params.get('ports').split(",")
 
+        self.port_bindings = None
+        if self.module.params.get('port_bindings'):
+            self.port_bindings = self.module.params.get(
+                'port_bindings').split(",")
+
         self.env = None
         if self.module.params.get('env'):
             self.env = dict(map(lambda x: x.split("="), self.module.params.get('env').split(",")))
@@ -366,7 +377,8 @@ class DockerManager:
 
     def start_containers(self, containers):
         for i in containers:
-                self.client.start(i['Id'], lxc_conf=self.lxc_conf, binds=self.binds)
+                self.client.start(i['Id'], lxc_conf=self.lxc_conf,
+                                  binds=self.binds, port_bindings={ 80, 80 })
                 self.increment_counter('started')
 
     def stop_containers(self, containers):
@@ -398,6 +410,7 @@ def main():
             image           = dict(required=True),
             command         = dict(required=False, default=None),
             ports           = dict(required=False, default=None),
+            port_bindings   = dict(required=False, default=None),
             volumes         = dict(default=None),
             volumes_from    = dict(default=None),
             memory_limit    = dict(default=0),
